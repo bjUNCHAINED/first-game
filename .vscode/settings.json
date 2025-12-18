@@ -67,5 +67,6 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "first-game.slnx"
+    "dotnet.defaultSolution": "first-game.slnx",
+    "editor.formatOnSave": true
 }

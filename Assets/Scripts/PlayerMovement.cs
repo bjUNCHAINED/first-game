@@ -12,10 +12,10 @@ public class PlayerMovement : MonoBehaviour
 
     [SerializeField]
     private float maxSpeed = 30f;
-    
+
     [SerializeField]
     private float acceleration = 30f;
-    
+
     [SerializeField]
     private float decceleration = 30f;
 
@@ -39,18 +39,14 @@ public class PlayerMovement : MonoBehaviour
         HandleRotation();
     }
 
-    void FixedUpdate()
-    {
-    }
+    void FixedUpdate() { }
 
     public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
     }
 
-    public void OnLook(InputValue value)
-    {
-    }
+    public void OnLook(InputValue value) { }
 
     private void SetMoveDirection()
     {
@@ -63,7 +59,7 @@ public class PlayerMovement : MonoBehaviour
         forward.Normalize();
         right.Normalize();
 
-        moveDirection = forward*moveInput.y + right * moveInput.x;
+        moveDirection = forward * moveInput.y + right * moveInput.x;
     }
 
     private void HandleMovement()
@@ -72,12 +68,20 @@ public class PlayerMovement : MonoBehaviour
         {
             // Accelerate
             Vector3 targetVelocity = moveDirection * maxSpeed;
-            currentVelocity = Vector3.MoveTowards(currentVelocity, targetVelocity, acceleration * Time.deltaTime);
+            currentVelocity = Vector3.MoveTowards(
+                currentVelocity,
+                targetVelocity,
+                acceleration * Time.deltaTime
+            );
         }
         else
         {
             // Decelerate
-            currentVelocity = Vector3.MoveTowards(currentVelocity, Vector3.zero, decceleration * Time.deltaTime );
+            currentVelocity = Vector3.MoveTowards(
+                currentVelocity,
+                Vector3.zero,
+                decceleration * Time.deltaTime
+            );
         }
 
         controller.Move(currentVelocity * Time.deltaTime);
@@ -88,7 +92,11 @@ public class PlayerMovement : MonoBehaviour
         if (shouldFaceMoveDirection && moveDirection.sqrMagnitude > 0.001f)
         {
             Quaternion toRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, toRotation, 10f * Time.deltaTime);
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                toRotation,
+                10f * Time.deltaTime
+            );
         }
     }
 }
