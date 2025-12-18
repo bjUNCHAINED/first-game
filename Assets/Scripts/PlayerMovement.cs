@@ -19,10 +19,12 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private float decceleration = 30f;
 
+    [SerializeField]
+    private float maxAccelerationMultiplier = 2f;
+
+    private CharacterController controller;
     private Vector2 moveInput;
     private Vector3 moveDirection;
-    private CharacterController controller;
-
     private Vector3 currentVelocity;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -68,10 +70,22 @@ public class PlayerMovement : MonoBehaviour
         {
             // Accelerate
             Vector3 targetVelocity = moveDirection * maxSpeed;
+
+            // Calculate the difference between current and target velocity
+            float velocityDifference = Vector3.Distance(currentVelocity, targetVelocity);
+
+            Debug.Log("Velocity Difference: " + velocityDifference);
+
+            // Scale acceleration based on the difference (larger difference = higher acceleration)
+            // Normalize by maxSpeed to get a 0-1 range, then multiply by maxAccelerationMultiplier
+            float accelerationMultiplier =
+                Mathf.Clamp01(velocityDifference / maxSpeed) * maxAccelerationMultiplier + 1f;
+            float dynamicAcceleration = acceleration * accelerationMultiplier;
+
             currentVelocity = Vector3.MoveTowards(
                 currentVelocity,
                 targetVelocity,
-                acceleration * Time.deltaTime
+                dynamicAcceleration * Time.deltaTime
             );
         }
         else
