@@ -207,7 +207,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.19101241, y: 0.000000012194821, z: -0.0000000023730558, w: 0.98158765}
-  m_LocalPosition: {x: -0.042, y: 2.1985555, z: -6.5875425}
+  m_LocalPosition: {x: -0.042, y: 3.2115555, z: -6.5875425}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -505,7 +505,7 @@ Transform:
   m_GameObject: {fileID: 382846120}
   serializedVersion: 2
   m_LocalRotation: {x: 0.19101241, y: 0.00000001219482, z: -0.0000000023730558, w: 0.98158765}
-  m_LocalPosition: {x: -0.042, y: 2.1985555, z: -6.5875425}
+  m_LocalPosition: {x: -0.042, y: 3.2115555, z: -6.5875425}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1152,13 +1152,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 2080902004432248786, guid: 50c676332b067154baf47b9c41c9cc09, type: 3}
+      propertyPath: m_NotificationBehavior
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2566157670580860383, guid: 50c676332b067154baf47b9c41c9cc09, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.042
       objectReference: {fileID: 0}
     - target: {fileID: 2566157670580860383, guid: 50c676332b067154baf47b9c41c9cc09, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.607
+      value: 1.62
       objectReference: {fileID: 0}
     - target: {fileID: 2566157670580860383, guid: 50c676332b067154baf47b9c41c9cc09, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1197,8 +1201,12 @@ PrefabInstance:
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 6622612116778505102, guid: 50c676332b067154baf47b9c41c9cc09, type: 3}
+      propertyPath: maxSpeed
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 6622612116778505102, guid: 50c676332b067154baf47b9c41c9cc09, type: 3}
       propertyPath: acceleration
-      value: 30
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 6622612116778505102, guid: 50c676332b067154baf47b9c41c9cc09, type: 3}
       propertyPath: decceleration

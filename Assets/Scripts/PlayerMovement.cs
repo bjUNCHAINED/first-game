@@ -22,10 +22,14 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private float maxAccelerationMultiplier = 2f;
 
+    [SerializeField]
+    private float gravity = -9.81f;
+
     private CharacterController controller;
     private Vector2 moveInput;
     private Vector3 moveDirection;
-    private Vector3 currentVelocity;
+    private Vector3 currentMoveVelocity;
+    private float currentGravityVelocity;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -39,6 +43,8 @@ public class PlayerMovement : MonoBehaviour
         SetMoveDirection();
         HandleMovement();
         HandleRotation();
+        HandleGravity();
+        MoveController();
     }
 
     void FixedUpdate() { }
@@ -46,6 +52,11 @@ public class PlayerMovement : MonoBehaviour
     public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
+    }
+
+    public void OnJump(InputValue value)
+    {
+        Debug.Log("Jump" + value.isPressed);
     }
 
     public void OnLook(InputValue value) { }
@@ -72,9 +83,7 @@ public class PlayerMovement : MonoBehaviour
             Vector3 targetVelocity = moveDirection * maxSpeed;
 
             // Calculate the difference between current and target velocity
-            float velocityDifference = Vector3.Distance(currentVelocity, targetVelocity);
-
-            Debug.Log("Velocity Difference: " + velocityDifference);
+            float velocityDifference = Vector3.Distance(currentMoveVelocity, targetVelocity);
 
             // Scale acceleration based on the difference (larger difference = higher acceleration)
             // Normalize by maxSpeed to get a 0-1 range, then multiply by maxAccelerationMultiplier
@@ -82,8 +91,8 @@ public class PlayerMovement : MonoBehaviour
                 Mathf.Clamp01(velocityDifference / maxSpeed) * maxAccelerationMultiplier + 1f;
             float dynamicAcceleration = acceleration * accelerationMultiplier;
 
-            currentVelocity = Vector3.MoveTowards(
-                currentVelocity,
+            currentMoveVelocity = Vector3.MoveTowards(
+                currentMoveVelocity,
                 targetVelocity,
                 dynamicAcceleration * Time.deltaTime
             );
@@ -91,14 +100,12 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             // Decelerate
-            currentVelocity = Vector3.MoveTowards(
-                currentVelocity,
+            currentMoveVelocity = Vector3.MoveTowards(
+                currentMoveVelocity,
                 Vector3.zero,
                 decceleration * Time.deltaTime
             );
         }
-
-        controller.Move(currentVelocity * Time.deltaTime);
     }
 
     private void HandleRotation()
@@ -112,5 +119,25 @@ public class PlayerMovement : MonoBehaviour
                 10f * Time.deltaTime
             );
         }
+    }
+
+    private void HandleGravity()
+    {
+        if (!controller.isGrounded)
+        {
+            currentGravityVelocity += gravity * Time.deltaTime;
+        }
+        else
+        {
+            currentGravityVelocity = -1f;
+        }
+    }
+
+    private void MoveController()
+    {
+        controller.Move(
+            new Vector3(currentMoveVelocity.x, currentGravityVelocity, currentMoveVelocity.z)
+                * Time.deltaTime
+        );
     }
 }
