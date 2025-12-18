@@ -37,6 +37,7 @@ public class PlayerMovement : MonoBehaviour
         SetMoveDirection();
         HandleMovement();
         HandleRotation();
+        Debug.Log("test");
     }
 
     void FixedUpdate()
