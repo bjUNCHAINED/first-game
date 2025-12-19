@@ -71,7 +71,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 6bba97d787db37c4a8235ded6f272e5e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -160,8 +160,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cbdb581b6b7131446b4926e321d13029, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  speed: 5
-  mouseSensitivity: 2
+  cameraTransform: {fileID: 0}
+  shouldFaceMoveDirection: 1
+  maxSpeed: 30
+  acceleration: 30
+  decceleration: 30
+  maxAccelerationMultiplier: 2
+  gravity: -9.81
+  jumpForce: 10
+  windDrag: 0.1
+  gravityMultiplier: 1
 --- !u!143 &3274704478707517633
 CharacterController:
   m_ObjectHideFlags: 0
@@ -254,7 +262,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 6bba97d787db37c4a8235ded6f272e5e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

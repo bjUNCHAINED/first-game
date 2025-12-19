@@ -25,11 +25,26 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private float gravity = -9.81f;
 
+    [SerializeField]
+    private float jumpForce = 10f;
+
+    [SerializeField]
+    private float windDrag = 0.1f;
+
+    [SerializeField]
+    private float gravityMultiplier = 1.0f;
+
+    [SerializeField]
+    private float lowJumpMultiplier = 2f;
+
     private CharacterController controller;
     private Vector2 moveInput;
+    private float jumpInput;
     private Vector3 moveDirection;
     private Vector3 currentMoveVelocity;
     private float currentGravityVelocity;
+    private bool isGrounded = false;
+    private float currentGravityMultiplier = 1.0f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -41,9 +56,13 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         SetMoveDirection();
+        SetIsGrounded();
+
         HandleMovement();
         HandleRotation();
+        HandleJump();
         HandleGravity();
+
         MoveController();
     }
 
@@ -56,7 +75,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void OnJump(InputValue value)
     {
-        Debug.Log("Jump" + value.isPressed);
+        jumpInput = value.Get<float>();
     }
 
     public void OnLook(InputValue value) { }
@@ -75,35 +94,55 @@ public class PlayerMovement : MonoBehaviour
         moveDirection = forward * moveInput.y + right * moveInput.x;
     }
 
+    private void SetIsGrounded()
+    {
+        isGrounded = controller.isGrounded;
+    }
+
     private void HandleMovement()
     {
-        if (moveDirection.magnitude >= 0.1f)
+        if (isGrounded)
         {
-            // Accelerate
+            // Movement on ground
+            if (moveDirection.magnitude >= 0.1f)
+            {
+                // Accelerate
+                Vector3 targetVelocity = moveDirection * maxSpeed;
+
+                // Calculate the difference between current and target velocity
+                float velocityDifference = Vector3.Distance(currentMoveVelocity, targetVelocity);
+
+                // Scale acceleration based on the difference (larger difference = higher acceleration)
+                // Normalize by maxSpeed to get a 0-1 range, then multiply by maxAccelerationMultiplier
+                float accelerationMultiplier =
+                    Mathf.Clamp01(velocityDifference / maxSpeed) * maxAccelerationMultiplier + 1f;
+                float dynamicAcceleration = acceleration * accelerationMultiplier;
+
+                currentMoveVelocity = Vector3.MoveTowards(
+                    currentMoveVelocity,
+                    targetVelocity,
+                    dynamicAcceleration * Time.deltaTime
+                );
+            }
+            else
+            {
+                // Decelerate
+                currentMoveVelocity = Vector3.MoveTowards(
+                    currentMoveVelocity,
+                    Vector3.zero,
+                    decceleration * Time.deltaTime
+                );
+            }
+        }
+        else
+        {
+            // Movement in air
             Vector3 targetVelocity = moveDirection * maxSpeed;
-
-            // Calculate the difference between current and target velocity
-            float velocityDifference = Vector3.Distance(currentMoveVelocity, targetVelocity);
-
-            // Scale acceleration based on the difference (larger difference = higher acceleration)
-            // Normalize by maxSpeed to get a 0-1 range, then multiply by maxAccelerationMultiplier
-            float accelerationMultiplier =
-                Mathf.Clamp01(velocityDifference / maxSpeed) * maxAccelerationMultiplier + 1f;
-            float dynamicAcceleration = acceleration * accelerationMultiplier;
 
             currentMoveVelocity = Vector3.MoveTowards(
                 currentMoveVelocity,
                 targetVelocity,
-                dynamicAcceleration * Time.deltaTime
-            );
-        }
-        else
-        {
-            // Decelerate
-            currentMoveVelocity = Vector3.MoveTowards(
-                currentMoveVelocity,
-                Vector3.zero,
-                decceleration * Time.deltaTime
+                acceleration * windDrag * Time.deltaTime
             );
         }
     }
@@ -121,14 +160,28 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private void HandleJump()
+    {
+        if (jumpInput > 0 && isGrounded)
+        {
+            currentGravityVelocity = jumpForce;
+        }
+        if (jumpInput == 0 && !isGrounded)
+        {
+            currentGravityMultiplier = gravityMultiplier * lowJumpMultiplier;
+        }
+    }
+
     private void HandleGravity()
     {
-        if (!controller.isGrounded)
+        if (!isGrounded)
         {
-            currentGravityVelocity += gravity * Time.deltaTime;
+            currentGravityVelocity += gravity * currentGravityMultiplier * Time.deltaTime;
         }
-        else
+        else if (isGrounded && currentGravityVelocity <= 0f)
         {
+            // Player is on ground
+            currentGravityMultiplier = gravityMultiplier;
             currentGravityVelocity = -1f;
         }
     }
