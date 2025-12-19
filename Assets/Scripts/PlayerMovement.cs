@@ -37,6 +37,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private float lowJumpMultiplier = 2f;
 
+    [SerializeField]
+    private float coyoteTime = 0.2f;
+
     private CharacterController controller;
     private Vector2 moveInput;
     private float jumpInput;
@@ -45,6 +48,8 @@ public class PlayerMovement : MonoBehaviour
     private float currentGravityVelocity;
     private bool isGrounded = false;
     private float currentGravityMultiplier = 1.0f;
+    private float coyoteTimer;
+    private bool jumpHeld = false;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -62,6 +67,7 @@ public class PlayerMovement : MonoBehaviour
         HandleRotation();
         HandleJump();
         HandleGravity();
+        HandleCoyoteTime();
 
         MoveController();
     }
@@ -162,13 +168,26 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleJump()
     {
-        if (jumpInput > 0 && isGrounded)
+        // Player should jump
+        if (jumpInput > 0 && coyoteTimer > 0f && currentGravityVelocity <= 0 && !jumpHeld)
         {
+            currentGravityMultiplier = gravityMultiplier;
             currentGravityVelocity = jumpForce;
         }
+
+        // Fast fall after jump
         if (jumpInput == 0 && !isGrounded)
         {
             currentGravityMultiplier = gravityMultiplier * lowJumpMultiplier;
+        }
+
+        if (jumpInput > 0)
+        {
+            jumpHeld = true;
+        }
+        else
+        {
+            jumpHeld = false;
         }
     }
 
@@ -183,6 +202,18 @@ public class PlayerMovement : MonoBehaviour
             // Player is on ground
             currentGravityMultiplier = gravityMultiplier;
             currentGravityVelocity = -1f;
+        }
+    }
+
+    private void HandleCoyoteTime()
+    {
+        if (isGrounded)
+        {
+            coyoteTimer = coyoteTime;
+        }
+        else
+        {
+            coyoteTimer -= Time.deltaTime;
         }
     }
 
