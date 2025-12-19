@@ -1,3 +1,4 @@
+using System;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -38,7 +39,10 @@ public class PlayerMovement : MonoBehaviour
     private float lowJumpMultiplier = 2f;
 
     [SerializeField]
-    private float coyoteTime = 0.2f;
+    private float coyoteTime = 0.1f;
+
+    [SerializeField]
+    private float wallDetectDistance = 0.2f;
 
     private CharacterController controller;
     private Vector2 moveInput;
@@ -219,9 +223,35 @@ public class PlayerMovement : MonoBehaviour
 
     private void MoveController()
     {
-        controller.Move(
+        // Move the player according to the intended movement
+        Vector3 intendedMovement =
             new Vector3(currentMoveVelocity.x, currentGravityVelocity, currentMoveVelocity.z)
-                * Time.deltaTime
+            * Time.deltaTime;
+
+        Vector3 positionBeforeMove = transform.position;
+        controller.Move(intendedMovement);
+        Vector3 positionAfterMove = transform.position;
+
+        // Calculate actual movement that occurred
+        Vector3 actualMovement = positionAfterMove - positionBeforeMove;
+        Vector3 actualVelocity = actualMovement / Time.deltaTime;
+
+        // Extract horizontal velocity (ignore Y component)
+        Vector3 intendedHorizontalVelocity = new Vector3(
+            currentMoveVelocity.x,
+            0,
+            currentMoveVelocity.z
         );
+        Vector3 actualHorizontalVelocity = new Vector3(actualVelocity.x, 0, actualVelocity.z);
+
+        // If actual movement differs significantly from intended, update currentMoveVelocity
+        // This handles cases where CharacterController slides along walls
+        if (
+            intendedHorizontalVelocity.magnitude > 0.1f
+            && Vector3.Distance(intendedHorizontalVelocity, actualHorizontalVelocity) > 0.5f
+        )
+        {
+            currentMoveVelocity = actualHorizontalVelocity;
+        }
     }
 }
