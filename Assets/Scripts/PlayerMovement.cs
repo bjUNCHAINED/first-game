@@ -12,28 +12,28 @@ public class PlayerMovement : MonoBehaviour
     private bool shouldFaceMoveDirection = true;
 
     [SerializeField]
-    private float maxSpeed = 30f;
+    private float maxSpeed = 6f;
 
     [SerializeField]
-    private float acceleration = 30f;
+    private float acceleration = 3f;
 
     [SerializeField]
     private float decceleration = 30f;
 
     [SerializeField]
-    private float maxAccelerationMultiplier = 2f;
+    private float maxAccelerationMultiplier = 4f;
 
     [SerializeField]
     private float gravity = -9.81f;
 
     [SerializeField]
-    private float jumpForce = 10f;
+    private float jumpForce = 4.5f;
 
     [SerializeField]
-    private float windDrag = 0.1f;
+    private float windDrag = 0.7f;
 
     [SerializeField]
-    private float gravityMultiplier = 1.0f;
+    private float gravityMultiplier = 1.5f;
 
     [SerializeField]
     private float lowJumpMultiplier = 2f;
@@ -42,7 +42,19 @@ public class PlayerMovement : MonoBehaviour
     private float coyoteTime = 0.1f;
 
     [SerializeField]
-    private float wallDetectDistance = 0.2f;
+    private float wallRunningDetectDistance = 0.5f;
+
+    [SerializeField]
+    private float wallRunningSpeedMultiplier = 1.5f;
+
+    [SerializeField]
+    private float wallRunningAccelerationMultiplier = 1.5f;
+
+    [SerializeField]
+    private float wallRunningDecelerationMultiplier = 0.5f;
+
+    [SerializeField]
+    private float wallRunningJumpForceMultiplier = 0.5f;
 
     private CharacterController controller;
     private Vector2 moveInput;
@@ -54,6 +66,12 @@ public class PlayerMovement : MonoBehaviour
     private float currentGravityMultiplier = 1.0f;
     private float coyoteTimer;
     private bool jumpHeld = false;
+    private bool wallRunning = false;
+    private bool isFacingWall = false;
+    private Vector3 wallNormal;
+    private Vector3 intendedHorizontalVelocity;
+    private Vector3 actualHorizontalVelocity;
+    private float velocityDifference = 0f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -66,6 +84,7 @@ public class PlayerMovement : MonoBehaviour
     {
         SetMoveDirection();
         SetIsGrounded();
+        SetWallRunning();
 
         HandleMovement();
         HandleRotation();
@@ -109,9 +128,65 @@ public class PlayerMovement : MonoBehaviour
         isGrounded = controller.isGrounded;
     }
 
+    private void SetWallRunning()
+    {
+        Ray ray = new Ray(transform.position, transform.forward);
+        RaycastHit hit;
+        isFacingWall = Physics.Raycast(ray, out hit, wallRunningDetectDistance);
+
+        if (
+            !wallRunning
+            && isFacingWall
+            && !isGrounded
+            && jumpHeld == true
+            && currentGravityVelocity > 0
+        )
+        {
+            wallRunning = true;
+            wallNormal = hit.normal;
+            currentGravityVelocity += jumpForce * wallRunningJumpForceMultiplier;
+        }
+        if (isGrounded)
+        {
+            wallRunning = false;
+            wallNormal = Vector3.zero;
+        }
+    }
+
     private void HandleMovement()
     {
-        if (isGrounded)
+        if (wallRunning)
+        {
+            // If wall running, redirect the movement direction to go along the wall
+            moveDirection = Vector3.Cross(wallNormal, Vector3.up);
+
+            if (
+                (transform.forward - moveDirection).magnitude
+                > (transform.forward + moveDirection).magnitude
+            )
+            {
+                moveDirection = -moveDirection;
+            }
+
+            // If moving upwards, accelerate, otherwise decelerate
+            if (currentGravityVelocity > 0)
+            {
+                currentMoveVelocity = Vector3.MoveTowards(
+                    currentMoveVelocity,
+                    moveDirection * maxSpeed * wallRunningSpeedMultiplier,
+                    acceleration * wallRunningAccelerationMultiplier * Time.deltaTime
+                );
+            }
+            else
+            {
+                currentMoveVelocity = Vector3.MoveTowards(
+                    currentMoveVelocity,
+                    Vector3.zero,
+                    decceleration * wallRunningDecelerationMultiplier * Time.deltaTime
+                );
+            }
+        }
+        else if (isGrounded)
         {
             // Movement on ground
             if (moveDirection.magnitude >= 0.1f)
@@ -229,26 +304,34 @@ public class PlayerMovement : MonoBehaviour
             * Time.deltaTime;
 
         Vector3 positionBeforeMove = transform.position;
-        controller.Move(intendedMovement);
+        CollisionFlags collisionFlags = controller.Move(intendedMovement);
         Vector3 positionAfterMove = transform.position;
 
         // Calculate actual movement that occurred
         Vector3 actualMovement = positionAfterMove - positionBeforeMove;
-        Vector3 actualVelocity = actualMovement / Time.deltaTime;
+
+        // Use a minimum deltaTime threshold to prevent division by very small values
+        // This prevents instability at high frame rates
+        float safeDeltaTime = Mathf.Max(Time.deltaTime, 0.0001f);
+        Vector3 actualVelocity = actualMovement / safeDeltaTime;
 
         // Extract horizontal velocity (ignore Y component)
-        Vector3 intendedHorizontalVelocity = new Vector3(
-            currentMoveVelocity.x,
-            0,
-            currentMoveVelocity.z
-        );
-        Vector3 actualHorizontalVelocity = new Vector3(actualVelocity.x, 0, actualVelocity.z);
+        intendedHorizontalVelocity = new Vector3(currentMoveVelocity.x, 0, currentMoveVelocity.z);
+        actualHorizontalVelocity = new Vector3(actualVelocity.x, 0, actualVelocity.z);
+        velocityDifference = Vector3.Distance(intendedHorizontalVelocity, actualHorizontalVelocity);
 
-        // If actual movement differs significantly from intended, update currentMoveVelocity
-        // This handles cases where CharacterController slides along walls
+        // Only update velocity if:
+        // 1. We have significant intended velocity (player is trying to move)
+        // 2. There's a significant difference between intended and actual (wall collision)
+        // 3. The actual velocity is not near zero (prevent stopping when not intended)
+        // 4. We actually hit something (Sides collision flag indicates wall hit)
+        bool hitWall = (collisionFlags & CollisionFlags.Sides) != 0;
+
         if (
             intendedHorizontalVelocity.magnitude > 0.1f
-            && Vector3.Distance(intendedHorizontalVelocity, actualHorizontalVelocity) > 0.5f
+            && hitWall
+            && velocityDifference > 0.5f
+            && actualHorizontalVelocity.magnitude > 0.01f // Prevent setting to near-zero
         )
         {
             currentMoveVelocity = actualHorizontalVelocity;
